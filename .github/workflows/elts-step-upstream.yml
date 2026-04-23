@@ -24,20 +24,27 @@ jobs:
 
       - name: Add Official OpenELA Remote
         run: |
-          # Adding the official OpenELA LTS repo as specified
+          # Official OpenELA repo
           git remote add openela https://github.com/openela/kernel-lts.git || true
-          git fetch openela linux-4.14.y --tags
+          # Fetching all tags specifically from openela
+          git fetch openela --tags
 
       - name: Merge v4.14.349 with Changes
         run: |
-          echo "🚀 Merging Official LTS & OpenELA v4.14.349..."
+          echo "🚀 Merging OpenELA v4.14.349..."
           
-          # Performing the merge for version 349 specifically
-          # This includes all bug fixes and changes from 348 to 349
-          git merge v4.14.349 -m "LTS update to 4.14.349" --no-edit || echo "MERGE_CONFLICT=true" >> $GITHUB_ENV
+          # OpenELA-তে ট্যাগগুলো v4.14.349-openela নামে থাকে
+          # আমরা সেই ট্যাগটি মার্জ করবো যাতে অরিজিনাল কমিটগুলো আসে
+          if git merge openela/v4.14.349-openela -m "LTS update to 4.14.349" --no-edit; then
+             echo "✅ Merge Successful"
+          else
+             echo "❌ Conflict or Tag not found"
+             echo "MERGE_CONFLICT=true" >> $GITHUB_ENV
+             exit 1
+          fi
 
       - name: Push to Bunny-UP
         if: env.MERGE_CONFLICT != 'true'
         run: |
           git push origin HEAD:Bunny-UP
-          
+
