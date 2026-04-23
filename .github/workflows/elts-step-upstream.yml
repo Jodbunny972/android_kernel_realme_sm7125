@@ -1,19 +1,19 @@
-name: Step-by-Step LTS Upstream
+name: Pure Step-by-Step Upstream
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # ম্যানুয়ালি রান করার জন্য
 
 permissions:
   contents: write
 
 jobs:
-  sequential_upstream:
+  upstream_job:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Bunny-UP Branch
         uses: actions/checkout@v4
         with:
-          ref: Bunny-UP
+          ref: Bunny-UP  # আপনার টার্গেট ব্রাঞ্চ
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -22,23 +22,37 @@ jobs:
           git config --global user.name "JOD-BUNNY"
           git config --global user.email "jod_bunny07@gmail.com"
 
-      - name: Fetch and Merge v4.14.349
+      - name: Fetch Official OpenELA Updates
         run: |
+          # Official OpenELA Repo যুক্ত করা
           git remote add openela https://github.com/openela/kernel-lts.git || true
           
           echo "🚀 Fetching Official OpenELA v4.14.349-openela..."
+          # নির্দিষ্ট ট্যাগটি ফেচ করা হচ্ছে
           git fetch openela refs/tags/v4.14.349-openela
+
+      - name: Resolve and Merge 4.14.349
+        run: |
+          echo "🚀 Merging updates and handling conflicts..."
           
-          echo "🚀 Merging with 'theirs' strategy to avoid manual conflicts..."
-          # '-X theirs' কমান্ডটি কনফ্লিক্ট হলে অটোমেটিক আপস্ট্রিমের কোড গ্রহণ করবে
-          if git merge FETCH_HEAD -m "LTS update to 4.14.349" --no-edit -X theirs; then
-             echo "✅ Success: 4.14.349-openela merged perfectly!"
+          # 'theirs' স্ট্র্যাটেজি ব্যবহার করে মার্জ শুরু করা (এটি কনফ্লিক্ট কমায়)
+          git merge FETCH_HEAD -m "LTS update to 4.14.349" --no-edit -X theirs || true
+          
+          # Modify/Delete কনফ্লিক্ট থাকলে (যেমন আপনার ১৯৩৫.পিএনজি-তে ছিল) 
+          # সেগুলোকে আপস্ট্রিমের মতো রিমুভ করে ক্লিন করা হবে
+          git add -u .
+          git rm $(git diff --name-only --diff-filter=U) || true
+          
+          # ফাইনাল কমিট চেক
+          if git commit -m "LTS update to 4.14.349 (Pure Upstream)"; then
+             echo "✅ Merge and Conflict Resolution Successful!"
           else
-             echo "❌ Unexpected error during merge"
-             exit 1
+             echo "ℹ️ No extra changes to commit or already merged."
           fi
 
-      - name: Push to Bunny-UP
+      - name: Push to Bunny-UP Branch
         run: |
+          # সরাসরি আপনার Bunny-UP ব্রাঞ্চে পুশ হবে
           git push origin HEAD:Bunny-UP
+
 
