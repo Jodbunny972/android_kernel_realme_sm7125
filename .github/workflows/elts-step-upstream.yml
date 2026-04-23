@@ -8,42 +8,35 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout তোমার repo
       - name: Checkout
         uses: actions/checkout@v4
         with:
           ref: Bunny-UP
 
-      # Git setup
       - name: Setup Git
         run: |
           git config --global user.name "JOD BUNNY"
           git config --global user.email "bot@users.noreply.github.com"
 
-      # Dependencies
       - name: Install deps
         run: |
           sudo apt update
-          sudo apt install -y git python3 python3-pip
+          sudo apt install -y python3 python3-pip wget unzip
 
-      # ✅ Correct ELTS tool clone
-      - name: Clone ELTS tool
+      # ✅ FIXED ELTS DOWNLOAD (NO GIT CLONE)
+      - name: Download ELTS tool
         run: |
-          git clone https://github.com/nathan-chance/linux-elts.git elts
+          wget https://github.com/nathan-chance/linux-elts/archive/refs/heads/main.zip -O elts.zip
+          unzip elts.zip
+          mv linux-elts-main elts
 
-      # 🔥 Step-by-step upstream (349 → 357)
+      # 🔥 Step-by-step upstream
       - name: Step-by-step upstream
         run: |
           cd elts
 
-          # Example step (349)
-          python3 elts.py \
-            --repo ../ \
-            --branch Bunny-UP \
-            --base 4.14.348 \
-            --target 4.14.349
+          python3 elts.py --repo ../ --branch Bunny-UP --base 4.14.348 --target 4.14.349
 
-          # Next steps auto loop
           for ver in 350 351 352 353 354 355 356 357; do
             python3 elts.py \
               --repo ../ \
@@ -52,7 +45,6 @@ jobs:
               --target 4.14.$ver
           done
 
-      # Push changes
       - name: Push changes
         run: |
           cd ..
