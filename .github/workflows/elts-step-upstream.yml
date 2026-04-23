@@ -1,19 +1,25 @@
-name: Pure Step-by-Step Upstream
+name: Step-by-Step LTS Upstream
 
 on:
-  workflow_dispatch: # ম্যানুয়ালি রান করার জন্য
+  push:
+    branches:
+      - Bunny-UP   # এই ব্রাঞ্চে কিছু পুশ করলেই অটো রান হবে
+  workflow_dispatch: # ম্যানুয়ালি রান করার অপশনও থাকলো
 
 permissions:
   contents: write
 
 jobs:
-  upstream_job:
+  upstream_350:
     runs-on: ubuntu-latest
+    # লুপ এড়ানোর জন্য এটি ব্যবহার করা ভালো যাতে অ্যাকশন নিজেই নিজেকে ট্রিগার না করে
+    if: "!contains(github.event.head_commit.message, 'Pure Upstream')"
+    
     steps:
       - name: Checkout Bunny-UP Branch
         uses: actions/checkout@v4
         with:
-          ref: Bunny-UP  # আপনার টার্গেট ব্রাঞ্চ
+          ref: Bunny-UP
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -22,37 +28,28 @@ jobs:
           git config --global user.name "JOD-BUNNY"
           git config --global user.email "jod_bunny07@gmail.com"
 
-      - name: Fetch Official OpenELA Updates
+      - name: Fetch and Merge v4.14.350
         run: |
-          # Official OpenELA Repo যুক্ত করা
           git remote add openela https://github.com/openela/kernel-lts.git || true
           
-          echo "🚀 Fetching Official OpenELA v4.14.349-openela..."
-          # নির্দিষ্ট ট্যাগটি ফেচ করা হচ্ছে
-          git fetch openela refs/tags/v4.14.349-openela
-
-      - name: Resolve and Merge 4.14.349
-        run: |
-          echo "🚀 Merging updates and handling conflicts..."
+          echo "🚀 Fetching Official OpenELA v4.14.350-openela..."
+          git fetch openela refs/tags/v4.14.350-openela
           
-          # 'theirs' স্ট্র্যাটেজি ব্যবহার করে মার্জ শুরু করা (এটি কনফ্লিক্ট কমায়)
-          git merge FETCH_HEAD -m "LTS update to 4.14.349" --no-edit -X theirs || true
+          echo "🚀 Merging updates from 349 to 350..."
+          # '-X theirs' স্ট্র্যাটেজি যাতে কনফ্লিক্ট নিজে নিজেই সমাধান হয়
+          git merge FETCH_HEAD -m "LTS update to 4.14.350" --no-edit -X theirs || true
           
-          # Modify/Delete কনফ্লিক্ট থাকলে (যেমন আপনার ১৯৩৫.পিএনজি-তে ছিল) 
-          # সেগুলোকে আপস্ট্রিমের মতো রিমুভ করে ক্লিন করা হবে
+          # Modify/Delete কনফ্লিক্ট ক্লিন করা
           git add -u .
           git rm $(git diff --name-only --diff-filter=U) || true
           
-          # ফাইনাল কমিট চেক
-          if git commit -m "LTS update to 4.14.349 (Pure Upstream)"; then
-             echo "✅ Merge and Conflict Resolution Successful!"
+          if git commit -m "LTS update to 4.14.350 (Pure Upstream)"; then
+             echo "✅ Success: 4.14.350 merged!"
           else
-             echo "ℹ️ No extra changes to commit or already merged."
+             echo "ℹ️ Already up to date."
           fi
 
-      - name: Push to Bunny-UP Branch
+      - name: Push to Bunny-UP
         run: |
-          # সরাসরি আপনার Bunny-UP ব্রাঞ্চে পুশ হবে
           git push origin HEAD:Bunny-UP
-
 
