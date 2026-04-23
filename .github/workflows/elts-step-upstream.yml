@@ -1,50 +1,59 @@
-name: ELTS Step Upstream
+name: ELTS Upstream
 
 on:
   workflow_dispatch:
-
-permissions:
-  contents: write
 
 jobs:
   upstream:
     runs-on: ubuntu-latest
 
     steps:
+      # Checkout তোমার repo
       - name: Checkout
         uses: actions/checkout@v4
         with:
           ref: Bunny-UP
 
+      # Git setup
       - name: Setup Git
         run: |
-          git config --global user.name "Vegard Nossum"
-          git config --global user.email "vegard.nossum@oracle.com"
+          git config --global user.name "JOD BUNNY"
+          git config --global user.email "bot@users.noreply.github.com"
 
+      # Dependencies
       - name: Install deps
         run: |
           sudo apt update
-          sudo apt install -y python3 git wget unzip
+          sudo apt install -y git python3 python3-pip
 
-      - name: Clone ELTS tool (fixed)
+      # ✅ Correct ELTS tool clone
+      - name: Clone ELTS tool
         run: |
-          git clone https://github.com/ClangBuiltLinux/linux-elts.git elts || \
-          (wget https://github.com/ClangBuiltLinux/linux-elts/archive/refs/heads/main.zip -O elts.zip && unzip elts.zip && mv linux-elts-main elts)
+          git clone https://github.com/nathan-chance/linux-elts.git elts
 
-      - name: Step-by-step upstream (349 → 357)
+      # 🔥 Step-by-step upstream (349 → 357)
+      - name: Step-by-step upstream
         run: |
           cd elts
-          for v in 349 350 351 352 353 354 355 356 357
-          do
-            echo ">>> Applying 4.14.$v"
 
+          # Example step (349)
+          python3 elts.py \
+            --repo ../ \
+            --branch Bunny-UP \
+            --base 4.14.348 \
+            --target 4.14.349
+
+          # Next steps auto loop
+          for ver in 350 351 352 353 354 355 356 357; do
             python3 elts.py \
               --repo ../ \
-              --from 4.14.$((v-1)) \
-              --to 4.14.$v \
-              --branch Bunny-UP
-
-            cd ..
-            git push origin Bunny-UP
-            cd elts
+              --branch Bunny-UP \
+              --base 4.14.$((ver-1)) \
+              --target 4.14.$ver
           done
+
+      # Push changes
+      - name: Push changes
+        run: |
+          cd ..
+          git push origin Bunny-UP
