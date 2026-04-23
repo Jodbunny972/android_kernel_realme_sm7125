@@ -1,33 +1,49 @@
-name: ELTS Upstream
+name: Step-by-Step LTS Upstream
 
 on:
   workflow_dispatch:
 
-jobs:
-  elts:
-    runs-on: ubuntu-latest
+permissions:
+  contents: write
 
+jobs:
+  sequential_upstream:
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout Bunny-UP Branch
         uses: actions/checkout@v4
         with:
+          ref: Bunny-UP
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup Git
+      - name: Git Config
         run: |
-          git config --global user.name "JOD BUNNY"
-          git config --global user.email "bot@users.noreply.github.com"
+          git config --global user.name "JOD-BUNNY"
+          git config --global user.email "jod_bunny07@gmail.com"
 
-      - name: Add OpenELA remote
+      - name: Add Official & OpenELA Remotes
         run: |
-          git remote add elts https://github.com/openela/kernel-lts.git || true
-          git fetch elts
+          git remote add stable https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git || true
+          git remote add openela https://github.com/openela/kernel-4.14.git || true
+          git fetch --all --tags
 
-      - name: Merge ELTS branch
+      - name: Sequential Merge Loop (349 to 357)
         run: |
-          git checkout Bunny-UP
-          git merge elts/linux-4.14.y --no-edit
+          for version in {349..357}; do
+            echo "------------------------------------------------"
+            echo "📦 Merging Official LTS & OpenELA v4.14.$version"
+            echo "------------------------------------------------"
+            
+            if ! git merge v4.14.$version --no-edit; then
+              echo "❌ Conflict detected at v4.14.$version"
+              echo "MERGE_CONFLICT=true" >> $GITHUB_ENV
+              exit 1
+            fi
+          done
 
-      - name: Push changes
+      - name: Push Updates to Bunny-UP
+        if: env.MERGE_CONFLICT != 'true'
         run: |
-          git push origin Bunny-UP
+          git push origin HEAD:Bunny-UP
+
