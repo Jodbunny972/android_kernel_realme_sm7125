@@ -1,0 +1,48 @@
+name: ELTS Step Upstream
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  upstream:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: Bunny-UP
+
+      - name: Setup Git
+        run: |
+          git config --global user.name "Vegard Nossum"
+          git config --global user.email "vegard.nossum@oracle.com"
+
+      - name: Install deps
+        run: |
+          sudo apt update
+          sudo apt install -y python3 git
+
+      - name: Clone ELTS tool
+        run: |
+          git clone https://github.com/nathanchance/linux-elts.git elts
+
+      - name: Step-by-step upstream
+        run: |
+          cd elts
+          for v in 349 350 351 352 353 354 355 356 357
+          do
+            echo ">>> Applying 4.14.$v"
+            python3 elts.py \
+              --repo ../ \
+              --from 4.14.$((v-1)) \
+              --to 4.14.$v \
+              --branch Bunny-UP
+
+            cd ..
+            git push origin Bunny-UP
+            cd elts
+          done
