@@ -24,18 +24,20 @@ jobs:
       - name: Install deps
         run: |
           sudo apt update
-          sudo apt install -y python3 git
+          sudo apt install -y python3 git wget unzip
 
-      - name: Clone ELTS tool
+      - name: Clone ELTS tool (fixed)
         run: |
-          git clone https://github.com/nathanchance/linux-elts.git elts
+          git clone https://github.com/ClangBuiltLinux/linux-elts.git elts || \
+          (wget https://github.com/ClangBuiltLinux/linux-elts/archive/refs/heads/main.zip -O elts.zip && unzip elts.zip && mv linux-elts-main elts)
 
-      - name: Step-by-step upstream
+      - name: Step-by-step upstream (349 → 357)
         run: |
           cd elts
           for v in 349 350 351 352 353 354 355 356 357
           do
             echo ">>> Applying 4.14.$v"
+
             python3 elts.py \
               --repo ../ \
               --from 4.14.$((v-1)) \
