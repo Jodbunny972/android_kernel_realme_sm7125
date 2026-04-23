@@ -24,22 +24,21 @@ jobs:
 
       - name: Fetch and Merge v4.14.349
         run: |
-          # Adding OpenELA official repo
           git remote add openela https://github.com/openela/kernel-lts.git || true
           
-          echo "🚀 Fetching Official OpenELA tag..."
-          # সরাসরি নির্দিষ্ট ট্যাগটি ফেচ করা হচ্ছে
+          echo "🚀 Fetching Official OpenELA v4.14.349-openela..."
           git fetch openela refs/tags/v4.14.349-openela
           
-          echo "🚀 Merging updates from Original Authors..."
-          # FETCH_HEAD ব্যবহার করলে গিট অটোমেটিক লেটেস্ট ফেচ করা ডেটা খুঁজে পায়
-          if git merge FETCH_HEAD -m "LTS update to 4.14.349" --no-edit; then
-             echo "✅ Success: 4.14.349-openela merged!"
+          echo "🚀 Merging with 'theirs' strategy to avoid manual conflicts..."
+          # '-X theirs' কমান্ডটি কনফ্লিক্ট হলে অটোমেটিক আপস্ট্রিমের কোড গ্রহণ করবে
+          if git merge FETCH_HEAD -m "LTS update to 4.14.349" --no-edit -X theirs; then
+             echo "✅ Success: 4.14.349-openela merged perfectly!"
           else
-             echo "❌ Error: Merge conflict detected"
+             echo "❌ Unexpected error during merge"
              exit 1
           fi
 
       - name: Push to Bunny-UP
         run: |
           git push origin HEAD:Bunny-UP
+
