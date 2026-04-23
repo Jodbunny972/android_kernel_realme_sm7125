@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 jobs:
-  upstream_353:
+  upstream_354:
     runs-on: ubuntu-latest
     if: "!contains(github.event.head_commit.message, 'Pure Upstream')"
     
@@ -27,19 +27,19 @@ jobs:
           git config --global user.name "JOD-BUNNY"
           git config --global user.email "jod_bunny07@gmail.com"
 
-      - name: Fetch and Merge v4.14.353
+      - name: Fetch and Merge v4.14.354
         run: |
           git remote add openela https://github.com/openela/kernel-lts.git || true
           
-          git fetch openela refs/tags/v4.14.353-openela
+          git fetch openela refs/tags/v4.14.354-openela
           
-          git merge FETCH_HEAD -m "LTS update to 4.14.353" --no-edit -X theirs || true
+          git merge FETCH_HEAD -m "LTS update to 4.14.354" --no-edit -X theirs || true
           
           git add -u .
           git rm $(git diff --name-only --diff-filter=U) || true
           
-          if git commit -m "LTS update to 4.14.353 (Pure Upstream)"; then
-             echo "Success: 4.14.353 merged!"
+          if git commit -m "LTS update to 4.14.354 (Pure Upstream)"; then
+             echo "Success: 4.14.354 merged!"
           else
              echo "Already up to date."
           fi
@@ -47,3 +47,4 @@ jobs:
       - name: Push to Bunny-UP
         run: |
           git push origin HEAD:Bunny-UP
+
