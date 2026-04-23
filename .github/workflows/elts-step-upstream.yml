@@ -22,29 +22,24 @@ jobs:
           git config --global user.name "JOD-BUNNY"
           git config --global user.email "jod_bunny07@gmail.com"
 
-      - name: Add Official OpenELA Remote
+      - name: Fetch and Merge v4.14.349
         run: |
-          # Official OpenELA repo
+          # Adding OpenELA official repo
           git remote add openela https://github.com/openela/kernel-lts.git || true
-          # Fetching all tags specifically from openela
-          git fetch openela --tags
-
-      - name: Merge v4.14.349 with Changes
-        run: |
-          echo "🚀 Merging OpenELA v4.14.349..."
           
-          # OpenELA-তে ট্যাগগুলো v4.14.349-openela নামে থাকে
-          # আমরা সেই ট্যাগটি মার্জ করবো যাতে অরিজিনাল কমিটগুলো আসে
-          if git merge openela/v4.14.349-openela -m "LTS update to 4.14.349" --no-edit; then
-             echo "✅ Merge Successful"
+          echo "🚀 Fetching Official OpenELA tag..."
+          # সরাসরি নির্দিষ্ট ট্যাগটি ফেচ করা হচ্ছে
+          git fetch openela refs/tags/v4.14.349-openela
+          
+          echo "🚀 Merging updates from Original Authors..."
+          # FETCH_HEAD ব্যবহার করলে গিট অটোমেটিক লেটেস্ট ফেচ করা ডেটা খুঁজে পায়
+          if git merge FETCH_HEAD -m "LTS update to 4.14.349" --no-edit; then
+             echo "✅ Success: 4.14.349-openela merged!"
           else
-             echo "❌ Conflict or Tag not found"
-             echo "MERGE_CONFLICT=true" >> $GITHUB_ENV
+             echo "❌ Error: Merge conflict detected"
              exit 1
           fi
 
       - name: Push to Bunny-UP
-        if: env.MERGE_CONFLICT != 'true'
         run: |
           git push origin HEAD:Bunny-UP
-
