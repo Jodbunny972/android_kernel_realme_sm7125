@@ -22,28 +22,22 @@ jobs:
           git config --global user.name "JOD-BUNNY"
           git config --global user.email "jod_bunny07@gmail.com"
 
-      - name: Add Official & OpenELA Remotes
+      - name: Add Official OpenELA Remote
         run: |
-          git remote add stable https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git || true
-          git remote add openela https://github.com/openela/kernel-4.14.git || true
-          git fetch --all --tags
+          # Adding the official OpenELA LTS repo as specified
+          git remote add openela https://github.com/openela/kernel-lts.git || true
+          git fetch openela linux-4.14.y --tags
 
-      - name: Sequential Merge Loop (349 to 357)
+      - name: Merge v4.14.349 with Changes
         run: |
-          for version in {349..357}; do
-            echo "------------------------------------------------"
-            echo "📦 Merging Official LTS & OpenELA v4.14.$version"
-            echo "------------------------------------------------"
-            
-            if ! git merge v4.14.$version --no-edit; then
-              echo "❌ Conflict detected at v4.14.$version"
-              echo "MERGE_CONFLICT=true" >> $GITHUB_ENV
-              exit 1
-            fi
-          done
+          echo "🚀 Merging Official LTS & OpenELA v4.14.349..."
+          
+          # Performing the merge for version 349 specifically
+          # This includes all bug fixes and changes from 348 to 349
+          git merge v4.14.349 -m "LTS update to 4.14.349" --no-edit || echo "MERGE_CONFLICT=true" >> $GITHUB_ENV
 
-      - name: Push Updates to Bunny-UP
+      - name: Push to Bunny-UP
         if: env.MERGE_CONFLICT != 'true'
         run: |
           git push origin HEAD:Bunny-UP
-
+          
