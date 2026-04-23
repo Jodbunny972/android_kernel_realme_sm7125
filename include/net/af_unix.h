@@ -45,8 +45,6 @@ struct scm_stat {
 	atomic_t nr_fds;
 };
 
-#define UNIXCB(skb)	(*(struct unix_skb_parms *)&((skb)->cb))
-
 /* The AF_UNIX socket */
 struct unix_sock {
 	/* WARNING: sk has to be the first member */
