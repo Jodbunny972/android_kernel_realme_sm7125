@@ -4,48 +4,30 @@ on:
   workflow_dispatch:
 
 jobs:
-  upstream:
+  elts:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: Bunny-UP
+          fetch-depth: 0
 
       - name: Setup Git
         run: |
           git config --global user.name "JOD BUNNY"
           git config --global user.email "bot@users.noreply.github.com"
 
-      - name: Install deps
+      - name: Add OpenELA remote
         run: |
-          sudo apt update
-          sudo apt install -y python3 python3-pip wget unzip
+          git remote add elts https://github.com/openela/kernel-lts.git || true
+          git fetch elts
 
-      # ✅ FIXED ELTS DOWNLOAD (NO GIT CLONE)
-      - name: Download ELTS tool
+      - name: Merge ELTS branch
         run: |
-          wget https://github.com/nathan-chance/linux-elts/archive/refs/heads/main.zip -O elts.zip
-          unzip elts.zip
-          mv linux-elts-main elts
-
-      # 🔥 Step-by-step upstream
-      - name: Step-by-step upstream
-        run: |
-          cd elts
-
-          python3 elts.py --repo ../ --branch Bunny-UP --base 4.14.348 --target 4.14.349
-
-          for ver in 350 351 352 353 354 355 356 357; do
-            python3 elts.py \
-              --repo ../ \
-              --branch Bunny-UP \
-              --base 4.14.$((ver-1)) \
-              --target 4.14.$ver
-          done
+          git checkout Bunny-UP
+          git merge elts/linux-4.14.y --no-edit
 
       - name: Push changes
         run: |
-          cd ..
           git push origin Bunny-UP
