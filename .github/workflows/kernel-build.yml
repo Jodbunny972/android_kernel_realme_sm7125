@@ -12,46 +12,96 @@ jobs:
 
     env:
       TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-      CHAT_ID: ${{ secrets.CHAT_ID }}
+      CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
 
     steps:
 
-    # =========================
+    # ========================
     # Checkout
-    # =========================
+    # ========================
     - name: Checkout source
       uses: actions/checkout@v4
-      with:
-        ref: Bunny-UP
 
-    # =========================
-    # Install dependencies
-    # =========================
+    # ========================
+    # Install Dependencies
+    # ========================
     - name: Install dependencies
       run: |
         sudo apt update
-        sudo apt install -y \
-          bc bison build-essential curl flex git \
-          libssl-dev lzop python3 zip unzip \
-          gcc g++ clang lld
+        sudo apt install -y bc bison flex curl zip unzip \
+        gcc g++ clang lld python3 git ccache
 
-    # =========================
-    # Give permission
-    # =========================
-    - name: Grant execute permission
-      run: chmod +x build.sh
+    # ========================
+    # Setup ccache
+    # ========================
+    - name: Setup ccache
+      run: |
+        export USE_CCACHE=1
+        export CCACHE_EXEC=$(which ccache)
+        ccache -M 5G
 
-    # =========================
+    # ========================
+    # Clone Proton Clang
+    # ========================
+    - name: Clone Clang
+      run: |
+        git clone --depth=1 https://github.com/kdrag0n/proton-clang clang
+
+    # ========================
+    # Clone AnyKernel3
+    # ========================
+    - name: Clone AnyKernel3
+      run: |
+        git clone --depth=1 https://github.com/JOD-BUNNY07/AnyKernel3 AnyKernel3
+
+    # ========================
+    # Remove KernelSU (clean build)
+    # ========================
+    - name: Remove KernelSU
+      run: |
+        rm -rf drivers/kernelsu || true
+
+    # ========================
+    # Fix Python gcc-wrapper
+    # ========================
+    - name: Fix gcc-wrapper
+      run: |
+        sed -i 's/>> sys.stderr/, file=sys.stderr/g' scripts/gcc-wrapper.py || true
+
+    # ========================
     # Build Kernel
-    # =========================
-    - name: Build kernel
-      run: ./build.sh
+    # ========================
+    - name: Build Kernel
+      run: |
+        chmod +x build.sh
+        ./build.sh
 
-    # =========================
-    # Upload artifact (backup)
-    # =========================
-    - name: Upload zip
+    # ========================
+    # Upload Artifact
+    # ========================
+    - name: Upload ZIP
       uses: actions/upload-artifact@v4
       with:
         name: BunnyX-Kernel
         path: AnyKernel3/*.zip
+
+    # ========================
+    # Upload to Telegram
+    # ========================
+    - name: Upload to Telegram
+      run: |
+        ZIP=$(find AnyKernel3 -name "*.zip" | head -n 1)
+
+        if [ -f "$ZIP" ]; then
+          curl -s -X POST "https://api.telegram.org/bot${{ env.TELEGRAM_TOKEN }}/sendDocument" \
+            -F chat_id="${{ env.CHAT_ID }}" \
+            -F document=@"$ZIP" \
+            -F caption="🔥 BunnyX Kernel Build Complete
+
+            📦 $(basename $ZIP)
+            ⚙️ Clang: Proton
+         👤 JOD-BUNNY"
+            else
+            echo "❌ ZIP not found!"
+          exit 1
+        fi
